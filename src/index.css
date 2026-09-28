@@ -1,0 +1,216 @@
+/* Import 2 font dari Google Fonts:
+   - Caveat: font tulisan tangan besar, dipakai untuk judul, status, dan huruf X/O
+   - Patrick Hand: font tulisan tangan yang lebih rapi, dipakai untuk teks kecil */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Patrick+Hand&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+/* .stage = wrapper terluar, membuat seluruh papan berada tepat
+   di tengah layar (secara horizontal & vertikal) */
+.stage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  /* radial-gradient bikin efek vignette: tengah agak terang, pinggir gelap */
+  background: radial-gradient(ellipse at top, #3a5a44 0%, #16241b 75%);
+  font-family: 'Patrick Hand', cursive;
+}
+
+/* .frame = bingkai kayu coklat di paling luar papan.
+   repeating-linear-gradient dipakai untuk meniru serat/garis kayu */
+.frame {
+  position: relative;
+  background: repeating-linear-gradient(90deg, #7a4a26 0 6px, #6b3f21 6px 12px);
+  border-radius: 14px;
+  padding: 14px; /* jarak ini yang membuat "ketebalan" bingkai kayu terlihat */
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.45), /* bayangan jatuh di lantai/background */
+    inset 0 0 0 4px #5a3419;         /* garis tepi dalam biar bingkai kayu lebih tegas */
+}
+
+/* .board-wrap = area hijau (permukaan papan tulis) di dalam bingkai kayu.
+   3 radial-gradient pertama = bercak-bercak "debu kapur" yang samar */
+.board-wrap {
+  position: relative;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.05), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.04), transparent 35%),
+    radial-gradient(circle at 50% 90%, rgba(255, 255, 255, 0.03), transparent 40%),
+    linear-gradient(160deg, #2b4a37 0%, #1f3928 100%); /* warna dasar hijau papan tulis */
+  border-radius: 8px;
+  padding: 28px 26px 22px;
+  width: 340px;
+  text-align: center;
+}
+
+/* Judul "Tic Tac Toe" */
+.game-title {
+  font-family: 'Caveat', cursive;
+  font-size: 42px;
+  font-weight: 700;
+  color: #f2f0e6; /* putih kekuningan, warna kapur */
+  margin: 0 0 4px;
+  transform: rotate(-1.5deg); /* dimiringkan sedikit, kesan tulisan tangan */
+  text-shadow: 0 0 8px rgba(242, 240, 230, 0.25); /* glow tipis meniru pantulan kapur */
+}
+
+/* Teks status ("Giliran X" / "X menang!" / "Seri! Papan penuh.") */
+.status {
+  font-family: 'Caveat', cursive;
+  font-size: 26px;
+  color: #e9e6da;
+  margin-bottom: 16px;
+  min-height: 34px; /* biar tinggi teks stabil, papan tidak "loncat" saat teks berubah */
+  transition: color 0.3s ease; /* transisi halus saat warna berubah jadi kuning (menang) */
+}
+
+/* Class tambahan khusus saat ada pemenang (dipasang lewat JS: status--win) */
+.status--win {
+  color: #f4c95d;
+  text-shadow: 0 0 10px rgba(244, 201, 93, 0.5);
+}
+
+/* .board = grid 3x3 untuk 9 kotak.
+   grid-template-columns/rows menentukan ukuran tiap sel */
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 84px); /* 3 kolom, masing-masing 84px */
+  grid-template-rows: repeat(3, 84px);    /* 3 baris, masing-masing 84px */
+  gap: 8px;               /* jarak antar kotak */
+  justify-content: center; /* posisikan grid di tengah horizontal */
+  margin: 0 auto 20px;
+}
+
+/* Style dasar tiap kotak/tombol */
+.square {
+  width: 84px;
+  height: 84px;
+  background: transparent;
+  border: 2.5px dashed rgba(242, 240, 230, 0.55); /* garis putus-putus meniru garis kapur */
+  border-radius: 10px;
+  font-family: 'Caveat', cursive;
+  font-size: 46px;
+  font-weight: 700;
+  color: #f2f0e6;
+  cursor: pointer;
+  /* var(--tilt) diisi dari inline style di JS (beda-beda tiap kotak) */
+  transform: rotate(var(--tilt));
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+/* Efek saat kursor mouse di atas kotak (belum diklik) */
+.square:hover {
+  background: rgba(242, 240, 230, 0.06);
+  border-color: rgba(242, 240, 230, 0.9);
+  transform: rotate(var(--tilt)) scale(1.04); /* sedikit membesar */
+}
+
+/* Efek saat kotak sedang ditekan (mouse down) */
+.square:active {
+  transform: rotate(var(--tilt)) scale(0.96); /* sedikit mengecil, kesan "ditekan" */
+}
+
+/* Warna berbeda untuk isi "X" dan "O" (class ini ditambahkan otomatis dari JS) */
+.square--x {
+  color: #f4c95d; /* kuning kapur */
+}
+
+.square--o {
+  color: #e8735b; /* oranye-koral */
+}
+
+/* Style kotak yang menjadi bagian dari garis kemenangan */
+.square--win {
+  background: rgba(244, 201, 93, 0.12);
+  border-color: #f4c95d;
+  border-style: solid; /* dari dashed jadi solid biar lebih menonjol */
+  box-shadow: 0 0 16px rgba(244, 201, 93, 0.55);
+  animation: chalk-pulse 1.1s ease-in-out infinite; /* animasi berkedip pelan */
+}
+
+/* Definisi animasi "chalk-pulse": box-shadow membesar-mengecil terus-menerus */
+@keyframes chalk-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(244, 201, 93, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(244, 201, 93, 0.75);
+  }
+}
+
+/* Tombol "Main Lagi" */
+.reset-btn {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 17px;
+  color: #16241b;
+  background: #f4c95d;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #b8912f; /* efek tombol "timbul" 3D sederhana */
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.reset-btn:hover {
+  filter: brightness(1.05); /* sedikit lebih terang saat di-hover */
+}
+
+.reset-btn:active {
+  /* Saat ditekan, tombol "turun" ke bawah dan bayangannya hilang,
+     meniru efek tombol fisik yang ditekan */
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #b8912f;
+}
+
+/* Area riwayat langkah, dipisahkan dari papan pakai garis putus-putus di atas */
+.game-info {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 2px dashed rgba(242, 240, 230, 0.3);
+}
+
+.game-info h3 {
+  font-family: 'Caveat', cursive;
+  font-size: 22px;
+  color: #cfd6c8;
+  margin: 0 0 8px;
+  text-align: left;
+}
+
+.game-info ol {
+  list-style: none; /* hilangkan penomoran default <ol> */
+  margin: 0;
+  padding: 0;
+  max-height: 150px;   /* batasi tinggi list */
+  overflow-y: auto;    /* munculkan scrollbar kalau riwayat kepanjangan */
+  text-align: left;
+}
+
+/* Tombol untuk tiap baris riwayat langkah */
+.move-btn {
+  width: 100%;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 15px;
+  color: #e9e6da;
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.move-btn:hover {
+  background: rgba(242, 240, 230, 0.08);
+}
+
+/* Style khusus untuk langkah yang sedang aktif (ditambahkan dari JS) */
+.move-btn--active {
+  color: #f4c95d;
+  font-weight: bold;
+}
